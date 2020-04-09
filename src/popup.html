@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<!-- <meta name="viewport" content="initial-scale=1.0"> -->
+    <meta charset="utf-8" />
+	<title>Quick Notes</title>
+	<link rel='stylesheet' href="css/style.css" />
+</head>
+<body>
+	<h1>Quick Notes</h1>
+	<div id="nodes"></div>
+	<p id='msg'></p>
+
+	<div class='form'>
+		<label for='key'>Note title:</label>
+		<input id='key' type='text' name='key' placeholder="Enter note title..." autocomplete="off" />
+		<br />
+		<label for='value'>Note:</label>
+		<br />
+		<textarea id='val' name='val' placeholder="Enter the note..."></textarea>
+		<br />
+		<button id="add">Add</button>
+		<button id="clear">Clear all notes</button>
+	</div>
+</body>
+<!-- jquery -->
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/main.js"></script>
+</html>
