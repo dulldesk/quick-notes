@@ -1,49 +1,49 @@
-var snips = {};
+var notes = {};
+const LS_NAME = "quick_notes_ext";
 
 // to-do: trim keys and vals
 
 $(document).ready(() => {
     load();
     adjust();
-
-    $('#add').click(() => {
-        let k = $('#key').val(), v = $('#val').val();
-
-        if (!check(k,v)) {
-            return;
-        } else $('#msg').hide();
-
-        snips[k] = v;
-        addNode(k,v);
-        update();
-        $('#nodes').show();
-
-        $('#key').val("");
-        $('#val').val("");
-        // console.log('added key to local storage');
-    }); 
+    
+    $('#add').click(setNote); 
 
     $('#clear').click(() => {
         for (let i of $('.node-x')) i.click();
     }); 
 });
 
-function update() {
-    localStorage.setItem("snips_ext",JSON.stringify(snips));
+function setNote() {
+    let k = $('#key').val().trim(), v = $('#val').val().trim();
+
+    if (!check(k,v)) return;
+    else $('#msg').hide();
+
+    const id = (new Date()).getTime();
+    notes[id] = [k,v];
+    addNode(k,v,id);
+
+    update();
+    $('#nodes').show();
+    $('#key').val("");
+    $('#val').val("");
+    // console.log('added key to local storage');
 }
 
-function check(k,v,bypass=false) {
+// function check(k,v,bypass=false) {
+function check(k,v) {
     // true bypass value: the original value for a key 
     ret = true;
-    if (!k || !(k.trim())) {
+    if (!k) {
         $('#msg').text("The title cannot be empty");
         ret = false;
-    } else if (!v || !(v.trim())) {
+    } else if (!v) {
         $('#msg').text("The note cannot be empty");
         ret = false;
-    } else if (snips.hasOwnProperty(k) && !(bypass && snips[k] == bypass)) {
-        $('#msg').text('Duplicate titles are not allowed'); 
-        ret = false;
+    // } else if (notes.hasOwnProperty(k) && !(bypass && notes[k] == bypass)) {
+        // $('#msg').text('Duplicate titles are not allowed'); 
+        // ret = false;
     }
     if (!ret) $('#msg').show();
     else $('#msg').hide();
@@ -61,23 +61,27 @@ function adjust() {
     $('.node').css('width',$('#nodes').children().length > 8 ? '98%' : '100%');
 }
 
+function update() {
+    localStorage.setItem(LS_NAME,JSON.stringify(notes));
+}
+
 function load() {
-    let data = localStorage.getItem('snips_ext');
+    let data = localStorage.getItem(LS_NAME);
     if (!data) {
-        localStorage.setItem("snips_ext","{}");
+        localStorage.setItem(LS_NAME,"{}");
         // console.log('set key in local storage');
     } else {
         data = JSON.parse(data);
-        snips = data;
-        console.log(data);
+        notes = data;
+        // console.log(data);
         if (Object.keys(data).length > 0) {
-            for (let k of Object.keys(data)) addNode(k,data[k]);
+            for (let id of Object.keys(data)) addNode(data[id][0],data[id][1],id);
         }
     }
 }
 
-function addNode(k,v) {
-    let key=$('<div></div>'),val=$('<div></div>'),div = $('<div></div>');
+function addNode(k,v,id) {
+    let key=$('<div></div>'),val=$('<div></div>'),node = $('<div></div>');
     let tools = $('<div></div>'), bck = $('<div></div>');
     
     let key_ed=$('<input></input>').val(k), val_ed=$('<textarea></textarea>').val(v);
@@ -89,7 +93,7 @@ function addNode(k,v) {
     val.append(val_txt,val_ed);
 
     let x = $('<span></span>').text('x');
-    let cb = $('<span></span>').text('📋');
+    let cb = $('<span></span>').text('📋'); // &#x2398
     let ed = $('<span></span>').text('✏️'); 
 
     let chk = $('<span></span>').text('✅'); 
@@ -97,29 +101,29 @@ function addNode(k,v) {
 
     key.addClass('node-key');
     val.addClass('node-val');
-    div.addClass('node');
+    node.addClass('node');
     x.addClass('node-x');
 	bck.addClass('node-tools-bck');
-    val.attr('id',`node-${k}-val`);
+    val.attr('id',`node-${id}-val`);
 
     tools.addClass('node-tools');
     tools.append(chk,ed,cb,x,bck);
 
-    div.append(key,val,tools);
+    node.append(key,val,tools);
 
-    div.hover(() => tools.show());
-    div.mouseleave(() => tools.hide());
+    node.hover(() => tools.show());
+    node.mouseleave(() => tools.hide());
 
     x.click(() => {
-        delete snips[k];
+        delete notes[id];
         update();
-        div.remove();
+        node.remove();
         adjust();
     });
 
     cb.click(() => {
         let range = document.createRange();
-        range.selectNode(document.getElementById(`node-${k}-val`).firstChild);
+        range.selectNode($(`#node-${id}-val`)[0].firstChild);
         window.getSelection().removeAllRanges();
         window.getSelection().addRange(range); 
         document.execCommand("copy");
@@ -130,23 +134,26 @@ function addNode(k,v) {
     });
 
     ed.click(() => {
-        div.mouseleave(() => tools.show());
+        node.mouseleave(_ => tools.show());
         [ed,cb,x].map(i => i.hide());
         chk.show();
 
         [key_txt, val_txt].map(i => i.hide());
         [key_ed, val_ed].map(i => i.show());
 
-        chk.click(() => {
-            if (!check(key_ed.val(),val_ed.val(),val_txt.text())) return;
+        key_ed.val(key_ed.val().trim());
+        val_ed.val(val_ed.val().trim());
 
-            div.mouseleave(() => tools.hide());
+        chk.click(() => {
+            if (!check(key_ed.val(),val_ed.val())) return;
+
+            node.mouseleave(_ => tools.hide());
             [ed,cb,x,bck].map(i => i.show());
             chk.hide();
 
-
-            delete snips[key_txt.text()];
-            snips[key_ed.val()] = val_ed.val();
+            notes[id] = [key_ed.val(),val_ed.val()];
+            // delete notes[key_txt.text()];
+            // notes[key_ed.val()] = val_ed.val();
 
             update();
 
@@ -159,7 +166,7 @@ function addNode(k,v) {
 
     });
 
-    $('#nodes').append(div);
+    $('#nodes').append(node);
 
     adjust();
 }
